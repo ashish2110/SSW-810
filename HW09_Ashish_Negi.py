@@ -19,25 +19,39 @@ class Repository():
             self.grade = self.grade_read(self.d_name + "/grades.txt")
             for cwid, name, \
                 dept in self.file_reading_gen(self.d_name + "/students.txt",
-                                              3, sep="\t", header=False):
+                                              3, sep=";", header=True):
                 self.student_repository[cwid] = Student(cwid, name, dept,
                                                         self.grade)
             for cwid, name, \
                 dept in self.file_reading_gen(self.d_name + "/instructors.txt",
-                                              3, sep="\t", header=False):
+                                              3, sep="|", header=True):
                 self.instructor_repository[cwid] = Instructors(cwid, name,
                                                                dept,
                                                                self.grade)
 
-            students = self.file_reading_gen(self.d_name + "/students.txt", 3,
-                                             sep="\t", header=False)
-            instructors = self.file_reading_gen(self.d_name + "/instructors.txt", 3,
-                                                sep="\t", header=False)
-            grades = self.file_reading_gen(self.d_name + "/grades.txt", 4,
-                                           sep="\t", header=False)
-
+            self.major_1 = Major()
+            for major, flag, \
+                course in self.file_reading_gen(self.d_name + "/majors.txt", 
+                                                3, sep="\t", header=True):
+                self.major_1.add_courses(major, flag, course)
+            self.major_1.student_remain_courses(self.student_repository)
+            # self.major_prettytable()
             # self.student_prettytable()
             # self.instructor_prettytable()
+            self.check_cwid_grades()
+
+    def major_prettytable(self):
+        pt = PrettyTable(field_names=['DEPT', 'REQUIRED', 'ELECTIVES'])
+
+        li = []
+        for key, details in self.major_1.major_req_courses.items():
+            li.append([key, sorted(details),
+                       sorted(self.major_1.major_ele_courses[key])])
+            pt.add_row([key, sorted(details),
+                       sorted(self.major_1.major_ele_courses[key])])
+        print(pt)
+        # print(li)
+        return(li)
 
     def instructor_prettytable(self):
         pt = PrettyTable(field_names=['CWID', 'NAME', 'DEPT', 'COURSE',
@@ -49,27 +63,42 @@ class Repository():
                 li.append([cwid, details.name, details.dept, course, count])
                 pt.add_row([cwid, details.name, details.dept, course, count])
         print(pt)
+        # print(li)
         return(li)
 
     def student_prettytable(self):
-        pt = PrettyTable(field_names=['CWID', 'NAME', 'COMPLETED COURSES'])
+        pt = PrettyTable(field_names=['CWID', 'NAME', 'MAJOR', \
+                                      'COMPLETED COURSES', \
+                                      'REMAINING REQUIRED', \
+                                      'REMAINING ELECTIVES'])
         li = []
         for cwid, details in self.student_repository.items():
             # print(details.course_grade)
-            li.append([cwid, details.name,
-                       [x for x in details.course_grade.keys()]])
-            pt.add_row([cwid, details.name,
-                        [x for x in details.course_grade.keys()]])
+            li.append([cwid, details.name, details.dept,
+                       sorted([x for x in details.course_grade.keys()]),
+                       details.req_courses, details.ele_courses])
+            pt.add_row([cwid, details.name, details.dept,
+                        sorted([x for x in details.course_grade.keys()]),
+                        details.req_courses, details.ele_courses])
         print(pt)
+        # print(li)
         return(li)
 
     def grade_read(self, grade_path):
         grade_list = []
         for s_id, course, grade, \
             p_id in self.file_reading_gen(grade_path,
-                                          4, sep='\t', header=False):
+                                          4, sep='|', header=True):
             grade_list.append([s_id, course, grade, p_id])
         return grade_list
+
+    def check_cwid_grades(self):
+        grade_list = []
+        for grade in self.grade:
+            if grade[0] not in self.student_repository:
+                print(f"Warning: '{grade[0]}' not present in students text file")
+            if grade[3] not in self.instructor_repository:
+                print(f"Warning: '{grade[3]}' not present in instructors text file")
 
     def file_reading_gen(self, path, fields, sep, header):
         """generator function file_reading_gen to read field-separated text
@@ -98,6 +127,30 @@ class Repository():
                     count += 1
 
 
+class Major():
+
+    def __init__(self):
+        self.major_req_courses = defaultdict(lambda: [])
+        self.major_ele_courses = defaultdict(lambda: [])
+
+    def add_courses(self, major, flag, course):
+        if flag == 'R':
+            self.major_req_courses[major].append(course)
+        elif flag == 'E':
+            self.major_ele_courses[major].append(course)
+
+    def student_remain_courses(self, student_dict):
+        for cwid, details in student_dict.items():
+            completed_courses = set([x for x in details.course_grade.keys()])
+            details.req_courses = set(self.major_req_courses[details.dept]) - \
+                completed_courses
+            details.ele_courses = set(self.major_ele_courses[details.dept]) - \
+                completed_courses
+            if len(details.ele_courses) < \
+               len(self.major_ele_courses[details.dept]):
+                details.ele_courses = None
+
+
 class Student():
 
     def __init__(self, cwid, name, dept, grades):
@@ -105,6 +158,8 @@ class Student():
         self.name = name
         self.dept = dept
         self.course_grade = defaultdict(lambda: [])
+        self.req_courses = {}
+        self.ele_courses = {}
         self.add_course_grade(cwid, grades)
 
     def add_course_grade(self, cwid, grades):
@@ -128,4 +183,4 @@ class Instructors():
 
 
 def main():
-    stevens = Repository("F:/desktop/lectures/SSW-810/assignments/week9")
+    stevens = Repository("F:/desktop/lectures/SSW-810/assignments/SSW-810")
