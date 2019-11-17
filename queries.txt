@@ -1,0 +1,33 @@
+-- What is the name of the instructor with CWID='98763'
+SELECT Name
+FROM instructors
+WHERE CWID='98763';
+
+--What is the total number of instructors by department?
+SELECT Dept, count(*)
+FROM instructors
+GROUP BY Dept;
+
+-- 3. What is the most frequent grade across all students and courses?
+SELECT Grade, count(*) as count_value
+FROM grades
+GROUP BY Grade ORDER BY count_value DESC;
+
+--4. Show the student's name, CWID, and major along with the courses and
+-- grades each student received in that course for all grades.
+SELECT Name, CWID, Major, Course, Grade
+FROM students, grades
+WHERE CWID = StudentCWID;
+
+-- 5.Show the names of students  who have grades for  'SSW 810'.
+SELECT Name, CWID, Major, Course, Grade
+FROM students, grades
+WHERE CWID = StudentCWID and Course = 'SSW 810';
+
+-- 6. Recreate the Instructor summary table from HW10,
+-- including the Instructor's CWID, name,
+-- department, course taught, and the number of students who took the course
+SELECT InstructorCWID, Name, Dept, Course, count(*)
+FROM instructors, grades
+WHERE InstructorCWID=CWID
+GROUP BY InstructorCWID, Course;

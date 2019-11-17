@@ -1,7 +1,7 @@
 from collections import defaultdict
 import os
 from prettytable import PrettyTable
-
+import sqlite3
 
 class Repository():
 
@@ -14,17 +14,17 @@ class Repository():
         try:
             files = os.listdir(self.d_name)
         except FileNotFoundError:
-            raise FileNotFoundError(f"No such directory name '{self.d_name}' ")
+            print(f"No such directory name '{self.d_name}' ")
         else:
             self.grade = self.grade_read(self.d_name + "/grades.txt")
             for cwid, name, \
                 dept in self.file_reading_gen(self.d_name + "/students.txt",
-                                              3, sep=";", header=True):
+                                              3, sep="\t", header=True):
                 self.student_repository[cwid] = Student(cwid, name, dept,
                                                         self.grade)
             for cwid, name, \
                 dept in self.file_reading_gen(self.d_name + "/instructors.txt",
-                                              3, sep="|", header=True):
+                                              3, sep="\t", header=True):
                 self.instructor_repository[cwid] = Instructors(cwid, name,
                                                                dept,
                                                                self.grade)
@@ -35,9 +35,10 @@ class Repository():
                                                 3, sep="\t", header=True):
                 self.major_1.add_courses(major, flag, course)
             self.major_1.student_remain_courses(self.student_repository)
-            # self.major_prettytable()
-            # self.student_prettytable()
-            # self.instructor_prettytable()
+            self.major_prettytable()
+            self.student_prettytable()
+            self.instructor_prettytable()
+            self.instructor_table_db(self.d_name + "/810_startup.db")
             self.check_cwid_grades()
 
     def major_prettytable(self):
@@ -50,7 +51,7 @@ class Repository():
             pt.add_row([key, sorted(details),
                        sorted(self.major_1.major_ele_courses[key])])
         print(pt)
-        # print(li)
+        #print(li)
         return(li)
 
     def instructor_prettytable(self):
@@ -62,6 +63,25 @@ class Repository():
             for course, count in details.student_count.items():
                 li.append([cwid, details.name, details.dept, course, count])
                 pt.add_row([cwid, details.name, details.dept, course, count])
+        print(pt)
+        # print(li)
+        return(li)
+
+    def instructor_table_db(self, db_path):
+
+        db = sqlite3.connect(db_path)
+        li = []
+        pt = PrettyTable(field_names=['CWID', 'NAME', 'DEPT', 'COURSE',
+                                      'STUDENTS'])
+
+        query = """SELECT InstructorCWID, Name, Dept, Course, count(*)
+                FROM instructors, grades
+                WHERE InstructorCWID=CWID
+                GROUP BY InstructorCWID, Course"""
+        for row in db.execute(query):
+            li.append(list(row))
+            pt.add_row(list(row))
+
         print(pt)
         # print(li)
         return(li)
@@ -88,7 +108,7 @@ class Repository():
         grade_list = []
         for s_id, course, grade, \
             p_id in self.file_reading_gen(grade_path,
-                                          4, sep='|', header=True):
+                                          4, sep='\t', header=True):
             grade_list.append([s_id, course, grade, p_id])
         return grade_list
 
@@ -107,7 +127,7 @@ class Repository():
         try:
             fp = open(path, 'r')
         except FileNotFoundError:
-            raise FileNotFoundError(f"Couldn't open input file '{path}' \
+            print(f"Couldn't open input file '{path}' \
                 for reading")
         else:
             with fp:
@@ -116,10 +136,11 @@ class Repository():
                     line = line.rstrip('\n')
                     if len(line.split(sep)) < fields or \
                        len(line.split(sep)) > fields:
-                        raise ValueError(f"ValueError: Input file\n\
+                        print(f"ValueError: Input file {path} \
                             has {len(line.split(sep))} fields \
-                            on line {count}\n \
+                            on line {count} \
                             but expected {fields}")
+                        exit()
                     elif (not header):
                         # print(line.split(sep=sep))
                         yield line.split(sep=sep)
@@ -141,7 +162,9 @@ class Major():
 
     def student_remain_courses(self, student_dict):
         for cwid, details in student_dict.items():
-            completed_courses = set([x for x in details.course_grade.keys()])
+            completed_courses = set([x for x, y in details.course_grade.items()
+                                    if y[-1] in
+                                    ['A', 'A-', 'B+', 'B', 'B-', 'C+', 'C']])
             details.req_courses = set(self.major_req_courses[details.dept]) - \
                 completed_courses
             details.ele_courses = set(self.major_ele_courses[details.dept]) - \
@@ -149,6 +172,8 @@ class Major():
             if len(details.ele_courses) < \
                len(self.major_ele_courses[details.dept]):
                 details.ele_courses = None
+            if len(details.req_courses) <= 0:
+                details.req_courses = None
 
 
 class Student():
