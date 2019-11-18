@@ -6,7 +6,7 @@ class TestModuleUniversityGenerator(unittest.TestCase):
     def test_student_prettytable(self):
         stevens = Repository("F:/desktop/lectures/SSW-810/assignments/SSW-810")
         self.assertEqual(stevens.student_prettytable(),
-                         [['10103', 'Jobs, S', 'SFEN', ['CS 501', 'SSW 810'], {'SSW 540', 'SSW 555'}, None], ['10115', 'Bezos, J', 'SFEN', ['CS 546', 'SSW 810'], {'SSW 540', 'SSW 555'}, {'CS 501', 'CS 546'}], ['10183', 'Musk, E', 'SFEN', ['SSW 555', 'SSW 810'], {'SSW 540'}, {'CS 501', 'CS 546'}], ['11714', 'Gates, B', 'CS', ['CS 546', 'CS 570', 'SSW 810'], None, None], ['11717', 'Kernighan, B', 'CS', [], {'CS 570', 'CS 546'}, {'SSW 565', 'SSW 810'}]])
+                        [['10103', 'Jobs, S', 'SFEN', ['CS 501', 'SSW 810'], {'SSW 555', 'SSW 540'}, None], ['10115', 'Bezos, J', 'SFEN', ['SSW 810'], {'SSW 555', 'SSW 540'}, {'CS 501', 'CS 546'}], ['10183', 'Musk, E', 'SFEN', ['SSW 555', 'SSW 810'], {'SSW 540'}, {'CS 501', 'CS 546'}], ['11714', 'Gates, B', 'CS', ['CS 546', 'CS 570', 'SSW 810'], None, None], ['11717', 'Kernighan, B', 'CS', [], {'CS 570', 'CS 546'}, {'SSW 810', 'SSW 565'}]])
 
     def test_instructor_prettytable(self):
         stevens = Repository("F:/desktop/lectures/SSW-810/assignments/SSW-810")

@@ -51,7 +51,7 @@ class Repository():
             pt.add_row([key, sorted(details),
                        sorted(self.major_1.major_ele_courses[key])])
         print(pt)
-        #print(li)
+        # print(li)
         return(li)
 
     def instructor_prettytable(self):
@@ -95,10 +95,10 @@ class Repository():
         for cwid, details in self.student_repository.items():
             # print(details.course_grade)
             li.append([cwid, details.name, details.dept,
-                       sorted([x for x in details.course_grade.keys()]),
+                       sorted([x for x in details.comp_course_grade.keys()]),
                        details.req_courses, details.ele_courses])
             pt.add_row([cwid, details.name, details.dept,
-                        sorted([x for x in details.course_grade.keys()]),
+                        sorted([x for x in details.comp_course_grade.keys()]),
                         details.req_courses, details.ele_courses])
         print(pt)
         # print(li)
@@ -162,7 +162,7 @@ class Major():
 
     def student_remain_courses(self, student_dict):
         for cwid, details in student_dict.items():
-            completed_courses = set([x for x, y in details.course_grade.items()
+            completed_courses = set([x for x, y in details.comp_course_grade.items()
                                     if y[-1] in
                                     ['A', 'A-', 'B+', 'B', 'B-', 'C+', 'C']])
             details.req_courses = set(self.major_req_courses[details.dept]) - \
@@ -183,6 +183,7 @@ class Student():
         self.name = name
         self.dept = dept
         self.course_grade = defaultdict(lambda: [])
+        self.comp_course_grade = defaultdict(lambda: [])
         self.req_courses = {}
         self.ele_courses = {}
         self.add_course_grade(cwid, grades)
@@ -191,6 +192,10 @@ class Student():
         for s_id, course, grade, p_id in grades:
             if s_id == cwid:
                 self.course_grade[course].append(grade)
+                # print(course)
+                # print(grade.strip())
+                if grade.strip() in ['A', 'A-', 'B+', 'B', 'B-', 'C+', 'C']:
+                    self.comp_course_grade[course].append(grade)
 
 
 class Instructors():
