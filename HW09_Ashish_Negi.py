@@ -214,3 +214,5 @@ class Instructors():
 
 def main():
     stevens = Repository("F:/desktop/lectures/SSW-810/assignments/SSW-810")
+
+main()
